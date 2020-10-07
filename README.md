@@ -7,8 +7,9 @@
 ---
 <img src = "ReadMeAssets/laptop-code-solid.svg" width="40">
 
-## Application Output Example
-![IMAGE](ReadMeAssets/pic.png)
+## Application Video Example
+  *Click the play icon below to watch the video tutorial:*
+[![IMAGE](ReadMeAssets/video.png)](https://drive.google.com/file/d/1YGfyJV1V2jdfkYe78ddDLZkTPW4GiwV8/view)
 
  ---
 ## Description

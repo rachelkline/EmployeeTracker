@@ -31,7 +31,7 @@ function MainMenu() {
             choices: [
                 "View All Employees by Department",
                 "View All Employees by Manager",
-                "View All Department Budgets",
+                // "View All Department Budgets",
                 "View All Departments",
                 "View All Employees",
                 "View All Roles",
@@ -54,9 +54,9 @@ function MainMenu() {
                 case "View All Employees by Manager":
                     viewEmpbyMan();
                     break;
-                case "View All Department Budgets":
-                    viewDeptBudget();
-                    break;
+                // case "View All Department Budgets":
+                //     viewDeptBudget();
+                //     break;
                 case "View All Employees":
                     viewAllEmps();
                     break;
@@ -372,20 +372,32 @@ const updateRole = () => {
     })
 }
 
-viewDeptBudget = () => {
-    connection.query(`SELECT department.dept_name AS Department, roles.salary AS Salary
-    FROM department
-    INNER JOIN roles ON roles.department_id = department.id
-    INNER JOIN employee ON employee.role_id = roles.id`, function (err, res) {
-        if(err)
-        throw err;
-        console.log(res)
+// viewDeptBudget = () => {
+//     let budgetArr = [];
+//     let department = "";
+//     connection.query(`SELECT department.dept_name AS Department, roles.salary AS Salary
+//     FROM department
+//     INNER JOIN roles ON roles.department_id = department.id
+//     INNER JOIN employee ON employee.role_id = roles.id`, function (err, res) {
+//         if(err)
+//         throw err;
+//         connection.query(`SELECT dept_name FROM department ORDER BY name ASC`, function (err, result){
+//         console.log(res[1].Salary)
 
-        for(d = 0; d < res.length; d++){
-            let departmentBudget = 0;
-        }
-    })
-}
+//         for(i = 0; i < res.length; i++){
+//             let departmentBudget = 0;
+//             for(d = 0; d < result.length; i++){
+//                 if(result[d].dept_name == res[i].dept_name){
+//                     departmentBudget += res[i].Salary;
+//                 }
+//                 console.log(departmentBudget);
+//             }
+//         }
+
+
+//         })
+//     })
+// }
 
 updateEmpManager = () => {
     let managerArr = [];
