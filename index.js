@@ -31,6 +31,7 @@ function MainMenu() {
             choices: [
                 "View All Employees by Department",
                 "View All Employees by Manager",
+                "View All Department Budgets",
                 "View All Departments",
                 "View All Employees",
                 "View All Roles",
@@ -52,6 +53,9 @@ function MainMenu() {
                     break;
                 case "View All Employees by Manager":
                     viewEmpbyMan();
+                    break;
+                case "View All Department Budgets":
+                    viewDeptBudget();
                     break;
                 case "View All Employees":
                     viewAllEmps();
@@ -109,7 +113,7 @@ const viewAllDepts = () => {
 }
 
 const viewAllEmps = () => {
-    connection.query(`SELECT concat(employee.first_name, ' ', employee.last_name) AS Employee, roles.title, roles.salary, department.dept_name, concat(managers.first_name, ' ', managers.last_name) AS Manager
+    connection.query(`SELECT concat(employee.first_name, ' ', employee.last_name) AS Employee, roles.title AS Title, roles.salary AS Salary, department.dept_name AS Department, concat(managers.first_name, ' ', managers.last_name) AS Manager
     FROM department
     INNER JOIN roles ON roles.department_id = department.id
     INNER JOIN employee ON employee.role_id = roles.id
@@ -149,7 +153,7 @@ const viewEmpbyDept = () => {
                         deptID = deptArr[i].ID;
                     }
                 }
-                connection.query(`SELECT employee.first_name, employee.last_name, roles.title, roles.salary, department.dept_name
+                connection.query(`SELECT concat(employee.first_name, ' ', employee.last_name) AS Employee, roles.title AS Title, roles.salary AS Salary, department.dept_name AS Department
                 FROM department
                 INNER JOIN roles ON roles.department_id = department.id
                 INNER JOIN employee ON employee.role_id = roles.id
@@ -369,7 +373,18 @@ const updateRole = () => {
 }
 
 viewDeptBudget = () => {
-    connection.query(``)
+    connection.query(`SELECT department.dept_name AS Department, roles.salary AS Salary
+    FROM department
+    INNER JOIN roles ON roles.department_id = department.id
+    INNER JOIN employee ON employee.role_id = roles.id`, function (err, res) {
+        if(err)
+        throw err;
+        console.log(res)
+
+        for(d = 0; d < res.length; d++){
+            let departmentBudget = 0;
+        }
+    })
 }
 
 updateEmpManager = () => {
