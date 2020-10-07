@@ -30,6 +30,7 @@ function MainMenu() {
             name: "menu",
             choices: [
                 "View All Employees by Department",
+                "View All Employees by Manager",
                 "View All Departments",
                 "View All Employees",
                 "View All Roles",
@@ -37,6 +38,7 @@ function MainMenu() {
                 "Add Employee",
                 "Add Role",
                 "Update Employee Role",
+                "Update Employee Manager",
                 "Delete Employee",
                 "Delete Role",
                 "Delete Department",
@@ -47,6 +49,9 @@ function MainMenu() {
             switch (answer.menu) {
                 case "View All Departments":
                     viewAllDepts();
+                    break;
+                case "View All Employees by Manager":
+                    viewEmpbyMan();
                     break;
                 case "View All Employees":
                     viewAllEmps();
@@ -68,6 +73,9 @@ function MainMenu() {
                     break;
                 case "Update Employee Role":
                     updateRole();
+                    break;
+                case "Update Employee Manager":
+                    updateEmpManager();
                     break;
                 case "Delete Employee":
                     deleteEmployee();
@@ -101,10 +109,11 @@ const viewAllDepts = () => {
 }
 
 const viewAllEmps = () => {
-    connection.query(`SELECT employee.first_name, employee.last_name, roles.title, roles.salary, department.dept_name
+    connection.query(`SELECT concat(employee.first_name, ' ', employee.last_name) AS Employee, roles.title, roles.salary, department.dept_name, concat(managers.first_name, ' ', managers.last_name) AS Manager
     FROM department
     INNER JOIN roles ON roles.department_id = department.id
-    INNER JOIN employee ON employee.role_id = roles.id`, function (err, res) {
+    INNER JOIN employee ON employee.role_id = roles.id
+    INNER JOIN managers ON employee.manager_id = managers.id`, function (err, res) {
         if (err)
             throw (err);
         if (res == "") {
@@ -144,7 +153,7 @@ const viewEmpbyDept = () => {
                 FROM department
                 INNER JOIN roles ON roles.department_id = department.id
                 INNER JOIN employee ON employee.role_id = roles.id
-                WHERE department.id = ${deptID}`, function (err, res) {
+                WHERE department.id = ${deptID} ORDER BY salary DESC`, function (err, res) {
                     if (err)
                         throw err;
                     console.table(res);
@@ -157,7 +166,7 @@ const viewEmpbyDept = () => {
 }
 
 const viewAllRoles = () => {
-    connection.query("SELECT * from roles", function (err, res) {
+    connection.query("SELECT * from roles ORDER BY salary DESC", function (err, res) {
         if (err)
             throw (err);
         if (res == "") {
@@ -165,11 +174,6 @@ const viewAllRoles = () => {
             MainMenu();
         } else {
             console.table(res);
-            // console.log(`-------------------------\nROLES:`);
-            // for(i = 0; i < res.length; i++){
-            //     console.log(`${res[i].id}.) ${res[i].title} (Salary: $${res[i].salary})`);
-            // }
-            // console.log(`-------------------------`);
             MainMenu();
         }
     })
@@ -205,6 +209,14 @@ const addEmp = () => {
             rolesArr.push(objects[i]);
         }
     })
+    connection.query(`SELECT managers.id, concat(managers.first_name, ' ' , managers.last_name) AS Manager FROM managers ORDER BY Manager ASC`, function(err, result){
+        if(err)
+        throw err;
+        for(i = 0; i < result.length; i++){
+            objects[i] = { id: result[i].id, name: result[i].Manager}
+            managerArr.push(objects[i])
+        }
+    })
     inquirer.prompt([
         {
             type: "input",
@@ -221,16 +233,27 @@ const addEmp = () => {
             message: "Select the employee's role:",
             choices: rolesArr,
             name: "jobTitle"
+        },
+        {
+            type: "list",
+            message: "Select a manager for this employee:",
+            choices: managerArr,
+            name: "manChoice"
         }
     ]).then((answer) => {
         let roleID = "";
+        let manID = "";
         for (i = 0; i < rolesArr.length; i++) {
             if (answer.jobTitle == rolesArr[i].name) {
                 roleID = rolesArr[i].id;
             }
         }
-        console.log(roleID);
-        connection.query(`INSERT INTO employee(first_name, last_name, role_id) VALUES("${answer.firstName}", "${answer.lastName}", "${roleID}")`, (err, res) => {
+        for(i = 0; i < managerArr.length; i++) {
+            if(answer.manChoice == managerArr[i].name){
+                manID = managerArr[i].id;
+            }
+        }console.log(manID)
+        connection.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES("${answer.firstName}", "${answer.lastName}", ${roleID}, ${manID})`, (err, res) => {
             if (err)
                 return err;
             console.log(`${answer.firstName} ${answer.lastName} added to employees...`);
@@ -300,12 +323,10 @@ const updateRole = () => {
             for (i = 0; i < roleData.length; i++) {
                 roleArr.push(roleData[i].title)
             }
-            console.log(roleArr)
 
             for (i = 0; i < empData.length; i++) {
                 employeeArr.push(empData[i].Employee)
             }
-            console.log(employeeArr)
 
             inquirer.prompt([
                 {
@@ -327,13 +348,13 @@ const updateRole = () => {
                     if (answer.role == roleData[i].title) {
                         roleID = roleData[i].id;
                     }
-                } console.log(roleID);
+                }
 
                 for (i = 0; i < empData.length; i++) {
                     if (answer.employeeRoles == empData[i].Employee) {
                         employeeID = empData[i].id;
                     }
-                } console.log(employeeID);
+                }
 
                 connection.query(`UPDATE employee SET role_id = ${roleID} WHERE id = ${employeeID}`, (err, res) => {
                     if (err) return err;
@@ -351,6 +372,64 @@ viewDeptBudget = () => {
     connection.query(``)
 }
 
+updateEmpManager = () => {
+    let managerArr = [];
+    let employeeArr = [];
+    connection.query(`SELECT managers.id, concat(managers.first_name, ' ' , managers.last_name) AS Manager FROM managers ORDER BY id ASC`, function(err, manData) {
+        if(err)
+            throw err;
+        connection.query(`SELECT employee.id, concat(employee.first_name, ' ' , employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`, function (err, empData) {
+            if (err)
+                throw err;
+        console.log(empData);
+
+        for(i = 0; i < manData.length; i++) {
+            managerArr.push(manData[i].Manager);
+        }
+        console.log(managerArr);
+
+        for(i = 0; i < empData.length; i++) {
+            employeeArr.push(empData[i].Employee);
+        }
+        console.log(employeeArr);
+
+        inquirer.prompt([
+            {
+                name: "empChoice",
+                type: "list",
+                choices: employeeArr,
+                message: "Select the employee you would like to change:"
+            },
+            {
+                name: "manChoice",
+                type: "list",
+                choices: managerArr,
+                message: "Select the manager to be assigned to this employee:"
+            }
+        ]).then((answer) => {
+            let manID = "";
+            let employeeID = "";
+            for(i = 0; i < managerArr.length; i++) {
+                if(answer.manChoice == manData[i].Manager){
+                    manID = manData[i].id
+                }
+            }
+            for(i = 0; i < employeeArr.length; i++) {
+                if(answer.empChoice == empData[i].Employee){
+                    employeeID = empData[i].id;
+                }
+            }
+            connection.query(`UPDATE employee SET manager_id= ${manID} WHERE id = ${employeeID}`, (err, res) => {
+                if(err) return err;
+                console.log(`${answer.empChoice} manager updated to ${answer.manChoice}`)
+                MainMenu();
+            })
+        })
+        })
+        
+    })
+}
+
 deleteEmployee = () => {
     let employeeArr = [];
     connection.query(`SELECT employee.id, concat(employee.first_name, ' ' , employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`, function (err, empData) {
@@ -359,7 +438,6 @@ deleteEmployee = () => {
         for (i = 0; i < empData.length; i++) {
             employeeArr.push(empData[i].Employee);
         }
-        console.log(employeeArr)
         inquirer.prompt([
             {
                 name: "delete",
@@ -399,7 +477,6 @@ deleteRole = () => {
     connection.query(`SELECT id, title FROM roles`, function (err, roleData) {
         if (err)
             throw err;
-        console.log(roleData);
         for (i = 0; i < roleData.length; i++) {
             roleArr.push(roleData[i].title)
         }
@@ -501,5 +578,21 @@ deleteDepartment = () => {
             }
         })
         
+    })
+}
+
+viewEmpbyMan = () => {
+    connection.query(`SELECT concat(employee.first_name, ' ', employee.last_name) AS Employee, concat(managers.first_name, ' ',managers.last_name) AS Manager
+    FROM employee
+    INNER JOIN managers ON employee.manager_id = managers.id`, function(err, res) {
+        if(err)
+            throw err;
+        if(res == "") {
+            console.log("Sorry, you need to add employees first.")
+            MainMenu();
+        } else {
+            console.table(res);
+            MainMenu();
+        }
     })
 }

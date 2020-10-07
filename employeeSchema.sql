@@ -31,6 +31,20 @@ CREATE TABLE employee(
     FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE CASCADE
 );
 
+--Create Manager table & hard code in managers
+CREATE TABLE managers(
+    id INT AUTO_INCREMENT NOT NULL,
+    first_name VARCHAR(30) NOT NULL,
+    last_name VARCHAR(30) NOT NULL,
+    PRIMARY KEY(id)
+);
+INSERT INTO managers (first_name, last_name) VALUES("Johnnie", "Bleu");
+INSERT INTO managers (first_name, last_name) VALUES("Aurora", "Pemberton");
+INSERT INTO managers (first_name, last_name) VALUES("Kevin", "Niel");
+INSERT INTO managers (first_name, last_name) VALUES("Lexie", "May");
+
+
+
 -- INNER JOIN returns role.title, role.salary, dep_name
 SELECT roles.title, roles.salary, department.dept_name
 FROM roles
