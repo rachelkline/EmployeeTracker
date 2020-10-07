@@ -29,14 +29,17 @@ function MainMenu() {
             type: "list",
             name: "menu",
             choices: [
+                "View All Employees by Department",
                 "View All Departments",
                 "View All Employees",
-                "View All Employees by Department",
                 "View All Roles",
                 "Add Department",
                 "Add Employee",
                 "Add Role",
                 "Update Employee Role",
+                "Delete Employee",
+                "Delete Role",
+                "Delete Department",
                 "Exit"
             ]
         }).then((answer) => {
@@ -66,6 +69,15 @@ function MainMenu() {
                 case "Update Employee Role":
                     updateRole();
                     break;
+                case "Delete Employee":
+                    deleteEmployee();
+                    break;
+                case "Delete Role":
+                    deleteRole();
+                    break;
+                case "Delete Department":
+                    deleteDepartment();
+                    break;
                 case "Exit":
                     connection.end();
                     break;
@@ -83,11 +95,6 @@ const viewAllDepts = () => {
             MainMenu();
         } else {
             console.table(res)
-            //     console.log(`-------------------------\nDEPARTMENTS:`);
-            // for (i = 0; i < res.length; i++) {
-            //     console.log(`${res[i].id}.) ${res[i].dept_name}`);
-            // }
-            // console.log(`-------------------------`);
             MainMenu();
         }
     });
@@ -187,6 +194,7 @@ const addDept = () => {
 }
 
 const addEmp = () => {
+    let managerArr = [];
     let rolesArr = [];
     let objects = {};
     connection.query("SELECT * from roles", function (err, res) {
@@ -284,57 +292,214 @@ const updateRole = () => {
     connection.query(`SELECT id, title FROM roles ORDER BY title ASC`, function (err, roleData) {
         if (err)
             throw err;
-       
+
+        connection.query(`SELECT employee.id, concat(employee.first_name, ' ' , employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`, function (err, empData) {
+            if (err)
+                throw err;
+
+            for (i = 0; i < roleData.length; i++) {
+                roleArr.push(roleData[i].title)
+            }
+            console.log(roleArr)
+
+            for (i = 0; i < empData.length; i++) {
+                employeeArr.push(empData[i].Employee)
+            }
+            console.log(employeeArr)
+
+            inquirer.prompt([
+                {
+                    type: "list",
+                    message: "What employee would you like to alter?",
+                    choices: employeeArr,
+                    name: "employeeRoles"
+                },
+                {
+                    name: "role",
+                    type: "list",
+                    message: `Select a new role:`,
+                    choices: roleArr
+                }
+            ]).then((answer) => {
+                let roleID = "";
+                let employeeID = "";
+                for (i = 0; i < roleData.length; i++) {
+                    if (answer.role == roleData[i].title) {
+                        roleID = roleData[i].id;
+                    }
+                } console.log(roleID);
+
+                for (i = 0; i < empData.length; i++) {
+                    if (answer.employeeRoles == empData[i].Employee) {
+                        employeeID = empData[i].id;
+                    }
+                } console.log(employeeID);
+
+                connection.query(`UPDATE employee SET role_id = ${roleID} WHERE id = ${employeeID}`, (err, res) => {
+                    if (err) return err;
+
+                    console.log(`${answer.employeeRoles} ROLE UPDATED TO ${answer.role}...`)
+
+                    MainMenu();
+                })
+            })
+        })
+    })
+}
+
+viewDeptBudget = () => {
+    connection.query(``)
+}
+
+deleteEmployee = () => {
+    let employeeArr = [];
     connection.query(`SELECT employee.id, concat(employee.first_name, ' ' , employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`, function (err, empData) {
         if (err)
             throw err;
-
-        for(i = 0; i < roleData.length; i++){
-            roleArr.push(roleData[i].title)
-        }
-        console.log(roleArr)
-
-        for(i = 0; i < empData.length; i++){
-            employeeArr.push(empData[i].Employee)
+        for (i = 0; i < empData.length; i++) {
+            employeeArr.push(empData[i].Employee);
         }
         console.log(employeeArr)
-
         inquirer.prompt([
             {
+                name: "delete",
                 type: "list",
-                message: "What employee would you like to alter?",
-                choices: employeeArr,
-                name: "employeeRoles" 
+                message: "Select the employee you would like to delete:",
+                choices: employeeArr
             },
             {
-                name: "role",
+                name: "confirm",
                 type: "list",
-                message: `Select a new role:`,
-                choices: roleArr
+                message: "Confirm deletion:",
+                choices: ["NO", "YES"]
             }
         ]).then((answer) => {
-            let roleID = "";
-            let employeeID = "";
-            for (i = 0; i < roleData.length; i++) {
-                if(answer.role == roleData[i].title){
-                    roleID = roleData[i].id;
-                }
-            }console.log(roleID);
-
-            for(i = 0; i < empData.length; i++) {
-                if(answer.employeeRoles == empData[i].Employee){
-                    employeeID = empData[i].id;
-                }
-            }console.log(employeeID);
-
-            connection.query(`UPDATE employee SET role_id = ${roleID} WHERE id = ${employeeID}`, (err, res) => {
-                if(err) return err;
-
-                console.log(`${answer.employeeRoles} ROLE UPDATED TO ${answer.role}...`)
-
+            if (answer.confirm == "NO") {
                 MainMenu();
-            })
+            } else {
+                let employeeID = "";
+                for (i = 0; i < employeeArr.length; i++) {
+                    if (answer.delete == empData[i].Employee) {
+                        employeeID = empData[i].id;
+                    }
+                }
+                connection.query(`DELETE FROM employee WHERE id=${employeeID};`, (err, res) => {
+                    if (err) return err;
+                    console.log(`EMPLOYEE ${answer.delete} DELETED...`)
+                    MainMenu();
+                })
+            }
+
         })
+    })
+}
+
+deleteRole = () => {
+    let roleArr = [];
+    connection.query(`SELECT id, title FROM roles`, function (err, roleData) {
+        if (err)
+            throw err;
+        console.log(roleData);
+        for (i = 0; i < roleData.length; i++) {
+            roleArr.push(roleData[i].title)
+        }
+        inquirer.prompt([
+            {
+                name: "continue",
+                type: "list",
+                message: "WARNING!! Deleting a role will delete all employees associated. CONTINUE?",
+                choices: ["NO", "YES"]
+            }
+        ]).then((answer) => {
+            if (answer.continue === "NO") {
+                MainMenu();
+            } else {
+                inquirer.prompt([
+                    {
+                        name: "role",
+                        type: "list",
+                        message: "Select the role you wish you delete:",
+                        choices: roleArr
+                    },
+                    {
+                        name: "secondConfirm",
+                        type: "input",
+                        message: "Type the role EXACTLY to confirm deletion:"
+                    }
+                ]).then((answer) => {
+                    if (answer.secondConfirm === answer.role) {
+                        let roleID = "";
+                        for (i = 0; i < roleData.length; i++) {
+                            if (answer.role == roleData[i].title) {
+                                roleID = roleData[i].id;
+                            }
+                        }
+                        connection.query(`DELETE FROM roles WHERE id=${roleID};`, (err, res) => {
+                            if (err) return err;
+                            console.log(`ROLE: ${answer.role} has been deleted...`);
+                            MainMenu();
+                        })
+                    } else {
+                        console.log(`ROLE: ${answer.role} has NOT been deleted...`)
+                        MainMenu();
+                    }
+                });
+            }
         })
-    }) 
+        
+    });
+}
+
+deleteDepartment = () => {
+    let deptArr = [];
+    connection.query(`SELECT * from department`, function(err, deptData) {
+        if (err)
+            throw err;
+        for(i = 0; i < deptData.length; i++) {
+            deptArr.push(deptData[i].dept_name);
+        }
+        inquirer.prompt([
+            {
+                name: "continueDelete",
+                type: "list",
+                message: "WARNING!! Deleting a department will delete all ROLES and all EMPLOYEES associated. Do you wish to continue?",
+                choices: ["NO", "YES"]
+            }
+        ]).then((answer) => {
+            if(answer.continueDelete === "NO") {
+                MainMenu();
+            } else {
+                inquirer.prompt([
+                    {
+                        name: "department",
+                        type: "list",
+                        message: "Select a department to delete:",
+                        choices: deptArr
+                    },
+                    {
+                        name: "secondConfirm",
+                        type: "input",
+                        message: "Type the department name EXACTLY to confirm deletion:"
+                    }
+                ]).then((answer) => {
+                    if(answer.secondConfirm === answer.department){
+                        let deptID = "";
+                        for(i = 0; i < deptData.length; i++){
+                            if(answer.department == deptData[i].dept_name){
+                                deptID = deptData[i].id;
+                            }
+                        }
+                        connection.query(`DELETE FROM department WHERE id=${deptID};`, (err, res) => {
+                            console.log(`DEPARTMENT: ${answer.department} has been deleted...`);
+                            MainMenu();
+                        });
+                    } else {
+                        console.log(`DEPARTMENT: ${answer.department} has NOT been deleted.`)
+                        MainMenu();
+                    }
+                })
+            }
+        })
+        
+    })
 }

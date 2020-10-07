@@ -7,6 +7,7 @@ USE employeesDB;
 CREATE TABLE department(
     id INT AUTO_INCREMENT NOT NULL,
     dept_name VARCHAR(30) NOT NULL,
+    -- budget INT,
     PRIMARY KEY(id)
 );
 
